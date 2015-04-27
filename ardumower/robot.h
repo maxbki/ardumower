@@ -163,6 +163,7 @@ class Robot
     char* stateName();
     unsigned long stateStartTime;
     unsigned long stateEndTime;
+    int timeBetweenState ;      
     // --------- timer ----------------------------------
     ttimer_t timer[MAX_TIMERS];
     datetime_t datetime;
@@ -252,9 +253,18 @@ class Robot
     int motorLeftSenseCounter ;  // motor current counter
     int motorRightSenseCounter ;
     unsigned long nextTimeMotorSense ;
+<<<<<<< HEAD
     unsigned long lastSetMotorSpeedTime;
     unsigned long motorLeftZeroTimeout;
     unsigned long motorRightZeroTimeout;
+=======
+    int lastMotorLeftSpeed ; // set speed
+    int lastMotorRightSpeed ;
+    int lastMotorLeftSetpoint ;
+    int lastMotorRightSetpoint ;
+    int incMotorLeftSetpoint ;
+    int incMotorRightSetpoint ;
+>>>>>>> origin/ramping-setpoint-and-smooth-stop-between-state
     // -------- mower motor state -----------------------
     // mower motor sppeed; range 0..motorMowSpeedMax
     float motorMowAccel       ;  // motor mower acceleration (warning: do not set too high)
