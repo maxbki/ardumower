@@ -42,7 +42,6 @@ Robot::Robot(){
   
   stateLast = stateCurr = stateNext = STATE_OFF; 
   stateTime = 0;
-  timeBetweenState = 1000;
   mowPatternCurr = MOW_RANDOM;
   
   odometryLeft = odometryRight = 0;
@@ -58,18 +57,10 @@ Robot::Robot(){
   motorRightSenseADC = motorLeftSenseADC = 0;
   motorLeftSenseCurrent = motorRightSenseCurrent = 0;     
   motorLeftSense = motorRightSense = 0;
-<<<<<<< HEAD
   motorLeftSenseCounter = motorRightSenseCounter = 0;  
   motorZeroSettleTime = 0;  
   motorLeftZeroTimeout = 0;
   motorRightZeroTimeout = 0;  
-=======
-  motorLeftSenseCounter = motorRightSenseCounter = 0; 
-
-  lastMotorLeftSpeed = lastMotorRightSpeed = 0;
-  lastMotorLeftSetpoint = lastMotorRightSetpoint = 0;
-  incMotorLeftSetpoint = incMotorRightSetpoint =0 ; 
->>>>>>> origin/ramping-setpoint-and-smooth-stop-between-state
   
   remoteSteer = remoteSpeed = remoteMow = remoteSwitch = 0;  
   remoteSteerLastTime = remoteSpeedLastTime =remoteMowLastTime =remoteSwitchLastTime = 0;
@@ -91,8 +82,8 @@ Robot::Robot(){
   bumperLeftCounter = bumperRightCounter = 0;
   bumperLeft = bumperRight = false;          
    
-  dropLeftCounter = dropRightCounter = 0;                                                                                              // Dropsensor - Absturzsensor
-  dropLeft = dropRight = false;                                                                                                        // Dropsensor - Absturzsensor
+   dropLeftCounter = dropRightCounter = 0;                                                                                              // Dropsensor - Absturzsensor
+   dropLeft = dropRight = false;                                                                                                        // Dropsensor - Absturzsensor
   
   gpsLat = gpsLon = gpsX = gpsY = 0;
 
@@ -718,101 +709,32 @@ void Robot::motorControlImuDir(){
 
 void Robot::motorControl(){
   if (odometryUse){
-    int motorLeftSetpoint = motorLeftSpeed;
-    int motorRightSetpoint = motorRightSpeed;
-    int LeftSetpoint = 0;
-    int RightSetpoint = 0;
-
-    if (millis() < stateStartTime + timeBetweenState)  {
-    motorLeftSetpoint = 0;
-    motorRightSetpoint = 0;
-    }
-
-    if ( stateCurr != STATE_REMOTE)     {  
-
-    //compute speed incrementation at new setpoint for left wheel
-    if (motorLeftSetpoint !=lastMotorLeftSetpoint) {
-      incMotorLeftSetpoint = (abs(lastMotorLeftSetpoint - motorLeftSetpoint) / 3.0);
-      lastMotorLeftSetpoint = motorLeftSetpoint;
-    }
-
-    //compute speed incrementation at new setpoint for right wheel
-    if (motorRightSetpoint !=lastMotorRightSetpoint) {
-      incMotorRightSetpoint = (abs(lastMotorRightSetpoint - motorRightSetpoint) / 3.0);
-      lastMotorRightSetpoint = motorRightSetpoint;
-    }
-
-    // compute ramping setpoint for left wheel
-    if (lastMotorLeftSpeed < motorLeftSetpoint ){
-      LeftSetpoint = lastMotorLeftSpeed + incMotorLeftSetpoint;
-      if ( (LeftSetpoint >motorLeftSetpoint) ) LeftSetpoint = motorLeftSetpoint ; 
-    }
-    else if (lastMotorLeftSpeed >motorLeftSetpoint ){
-      LeftSetpoint = lastMotorLeftSpeed - incMotorLeftSetpoint;
-      if ( (LeftSetpoint < motorLeftSetpoint)) LeftSetpoint = motorLeftSetpoint ;
-    }
-    else LeftSetpoint = motorLeftSetpoint;
-    lastMotorLeftSpeed = LeftSetpoint;
-
-    // compute ramping setpoint for right wheel
-    if (lastMotorRightSpeed <motorRightSetpoint ){
-      RightSetpoint = lastMotorRightSpeed + incMotorRightSetpoint; 
-      if ((RightSetpoint >motorRightSetpoint) ) RightSetpoint = motorRightSetpoint ;
-    }
-    else if (lastMotorRightSpeed >motorRightSetpoint ){
-      RightSetpoint = lastMotorRightSpeed - incMotorRightSetpoint; 
-      if ((RightSetpoint <motorRightSetpoint) ) RightSetpoint = motorRightSetpoint ;
-    }
-    else RightSetpoint = motorRightSetpoint ;
-    lastMotorRightSpeed = RightSetpoint;
-
-
-  } else  {
-
-    LeftSetpoint = motorLeftSetpoint;
-    RightSetpoint = motorRightSetpoint ;
-
-  }
-
-
     // Regelbereich entspricht maximaler PWM am Antriebsrad (motorSpeedMaxPwm), um auch an Steigungen höchstes Drehmoment für die Solldrehzahl zu gewährleisten
     motorLeftPID.x = motorLeftRpm;                 // IST 
-<<<<<<< HEAD
     motorLeftPID.w = motorLeftSpeed;               // SOLL 
     if (millis() < stateStartTime + motorZeroSettleTime) motorLeftPID.w = 0; // get zero speed first after state change
-=======
-    motorLeftPID.w = LeftSetpoint;               // SOLL 
->>>>>>> origin/ramping-setpoint-and-smooth-stop-between-state
     motorLeftPID.y_min = -motorSpeedMaxPwm;        // Regel-MIN
     motorLeftPID.y_max = motorSpeedMaxPwm;     // Regel-MAX
     motorLeftPID.max_output = motorSpeedMaxPwm;    // Begrenzung
     motorLeftPID.compute();
     int leftSpeed = max(-motorSpeedMaxPwm, min(motorSpeedMaxPwm, motorLeftPWM + motorLeftPID.y));
-
-    // these cases should never happend.
-    if((motorLeftSpeed >= 0 ) && (leftSpeed <0 )) leftSpeed = 0;
-    if((motorLeftSpeed <= 0 ) && (leftSpeed >0 )) leftSpeed = 0;     
+    //if((motorLeftSpeed >= 0 ) && (leftSpeed <0 )) leftSpeed = 0;
+    //if((motorLeftSpeed <= 0 ) && (leftSpeed >0 )) leftSpeed = 0;     
 
     // Regelbereich entspricht maximaler PWM am Antriebsrad (motorSpeedMaxPwm), um auch an Steigungen höchstes Drehmoment für die Solldrehzahl zu gewährleisten
     motorRightPID.Kp = motorLeftPID.Kp;
     motorRightPID.Ki = motorLeftPID.Ki;
     motorRightPID.Kd = motorLeftPID.Kd;          
     motorRightPID.x = motorRightRpm;               // IST
-<<<<<<< HEAD
     motorRightPID.w = motorRightSpeed;             // SOLL
     if (millis() < stateStartTime + motorZeroSettleTime) motorRightPID.w = 0; // get zero speed first after state change
-=======
-    motorRightPID.w = RightSetpoint;             // SOLL
->>>>>>> origin/ramping-setpoint-and-smooth-stop-between-state
     motorRightPID.y_min = -motorSpeedMaxPwm;       // Regel-MIN
     motorRightPID.y_max = motorSpeedMaxPwm;        // Regel-MAX
     motorRightPID.max_output = motorSpeedMaxPwm;   // Begrenzung
     motorRightPID.compute();            
     int rightSpeed = max(-motorSpeedMaxPwm, min(motorSpeedMaxPwm, motorRightPWM + motorRightPID.y));
-
-    // these cases should never happend.
-    if((motorRightSpeed >= 0 ) && (rightSpeed <0 )) rightSpeed = 0;
-    if((motorRightSpeed <= 0 ) && (rightSpeed >0 )) rightSpeed = 0;         
+    //if((motorRightSpeed >= 0 ) && (rightSpeed <0 )) rightSpeed = 0;
+    //if((motorRightSpeed <= 0 ) && (rightSpeed >0 )) rightSpeed = 0;         
 
     if (  ((stateCurr == STATE_OFF) || (stateCurr == STATE_STATION) || (stateCurr == STATE_ERROR)) && (millis()-stateStartTime>1000)  ){
       leftSpeed = rightSpeed = 0; // ensures PWM is zero if OFF/CHARGING
@@ -1572,11 +1494,7 @@ void Robot::setNextState(byte stateNew, byte dir){
   } 
   else if (stateNew == STATE_REVERSE)  {
     motorLeftSpeed = motorRightSpeed = -motorSpeedMax/1.25;                    
-<<<<<<< HEAD
     stateEndTime = millis() + motorReverseTime + motorZeroSettleTime;
-=======
-    stateEndTime = millis() + motorReverseTime + timeBetweenState;                     
->>>>>>> origin/ramping-setpoint-and-smooth-stop-between-state
   }   
   else if (stateNew == STATE_ROLL) {                  
       imuDriveHeading = scalePI(imuDriveHeading + PI); // toggle heading 180 degree (IMU)
@@ -1587,11 +1505,7 @@ void Robot::setNextState(byte stateNew, byte dir){
         imuRollHeading = scalePI(imuDriveHeading + PI/20);        
         imuRollDir = LEFT;
       }      
-<<<<<<< HEAD
       stateEndTime = millis() + random(motorRollTimeMax/2,motorRollTimeMax) + motorZeroSettleTime;
-=======
-      stateEndTime = millis() + rand() % motorRollTimeMax/2 + motorRollTimeMax/2 + timeBetweenState;               
->>>>>>> origin/ramping-setpoint-and-smooth-stop-between-state
       if (dir == RIGHT){
 	motorLeftSpeed = motorSpeedMax/1.25;
 	motorRightSpeed = -motorLeftSpeed/1.25;						
@@ -2008,7 +1922,7 @@ void Robot::loop()  {
   readSensors();  
 
   if ((odometryUse) && (millis() >= nextTimeOdometryInfo)){
-    nextTimeOdometryInfo = millis() + 100;
+    nextTimeOdometryInfo = millis() + 300;
     calcOdometry();
     //printOdometry();        
   }
