@@ -139,7 +139,7 @@ enum {
 };
 
 // roll types
-enum { LEFT, RIGHT };
+enum { LEFT, RIGHT, RANDOM };
 
 // mow patterns
 enum { MOW_RANDOM, MOW_LANES, MOW_BIDIR };
@@ -190,7 +190,6 @@ class Robot
     bool odometryLeftSwapDir;       // inverse left encoder direction?        
     int odometryLeft ;   // left wheel counter
     int odometryRight ;  // right wheel counter
-      int calcOdometryIsCalled ; //only for temp debugging purposes
     boolean odometryLeftLastState;
     boolean odometryLeftLastState2;
     boolean odometryRightLastState;
@@ -198,9 +197,13 @@ class Robot
     float odometryTheta; // theta angle (radiant)
     float odometryX ;   // X map position (cm)
     float odometryY ;   // Y map position (cm)    
+    int motorLeftRpmCounter ; // left wheel rpm counter
     int motorLeftRpm ; // left wheel rpm
     unsigned long lastMotorRpmTime ;     
+    int motorRightRpmCounter ; // right wheel rpm counter
     int motorRightRpm ; // right wheel rpm    
+    unsigned long lastMotorLeftRpmTime;
+    unsigned long lastMotorRightRpmTime;
     unsigned long nextTimeOdometry ;
     unsigned long nextTimeOdometryInfo ; 
     // -------- RC remote control state -----------------    
@@ -225,7 +228,7 @@ class Robot
     // --------- wheel motor state ----------------------------
     // wheel motor speed ( <0 backward, >0 forward); range -motorSpeedMax..motorSpeedMax
     float motorAccel  ;  // motor wheel acceleration (warning: do not set too high)
-    int motorSpeedMax   ;   // motor wheel max RPM
+    int motorSpeedMaxRPM   ;   // motor wheel max RPM
     int motorSpeedMaxPwm  ;  // motor wheel max Pwm  (8-bit PWM=255, 10-bit PWM=1023)
     float motorPowerMax   ;    // motor wheel max power (Watt)
     PID motorLeftPID;              // motor left wheel PID controller
@@ -239,8 +242,15 @@ class Robot
     float motorBiDirSpeedRatio2 ;   // bidir mow pattern speed ratio 2
     bool motorRightSwapDir     ;    // inverse right motor direction? 
     bool motorLeftSwapDir      ;    // inverse left motor direction?  
-    int motorLeftSpeed ; // set speed
-    int motorRightSpeed ;
+    int motorLeftSpeed ; // left speed setpoint
+    int motorRightSpeed ; //right speed setpoint
+    int lastMotorLeftSpeed ; // set speed
+    int lastMotorRightSpeed ;
+    int lastMotorLeftSetpoint ;
+    int lastMotorRightSetpoint ;
+    int incMotorLeftSetpoint ;
+    int incMotorRightSetpoint ;  
+
     float motorLeftPWM ; // current speed
     float motorRightPWM ;
     int motorRightSenseADC ;
@@ -250,15 +260,13 @@ class Robot
     float motorLeftSense ;      // motor power (range 0..MAX_MOTOR_POWER)
     float motorRightSense ;
     int motorPowerIgnoreTime; 
+    int motorZeroSettleTime;     // how long (ms) to wait for motor to settle at zero speed
     int motorLeftSenseCounter ;  // motor current counter
     int motorRightSenseCounter ;
     unsigned long nextTimeMotorSense ;
-    int lastMotorLeftSpeed ; // set speed
-    int lastMotorRightSpeed ;
-    int lastMotorLeftSetpoint ;
-    int lastMotorRightSetpoint ;
-    int incMotorLeftSetpoint ;
-    int incMotorRightSetpoint ;
+    unsigned long lastSetMotorSpeedTime;
+    unsigned long motorLeftZeroTimeout;
+    unsigned long motorRightZeroTimeout;
     // -------- mower motor state -----------------------
     // mower motor sppeed; range 0..motorMowSpeedMax
     float motorMowAccel       ;  // motor mower acceleration (warning: do not set too high)
@@ -326,6 +334,7 @@ class Robot
     int trackingPerimeterTransitionTimeOut;
     int trackingErrorTimeOut;    
     char trackingBlockInnerWheelWhilePerimeterStruggling;
+    byte rollDirection;
     //  --------- lawn state ----------------------------
     char lawnSensorUse     ;       // use capacitive Sensor
     int lawnSensorCounter;
@@ -366,6 +375,7 @@ class Robot
     float batSwitchOffIfBelow ;  // switch off if below voltage (Volt)
     float batFactor       ;     // battery conversion factor
     float batChgFactor       ;     // battery conversion factor    
+    float batSenseZero    ;        // battery volt sense zero point
     float batFull         ;      // battery reference Voltage (fully charged)
     float batFullCurrent   ; // current flowing when battery is fully charged
     float startChargingIfBelow; // start charging if battery Voltage is below

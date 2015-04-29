@@ -252,16 +252,21 @@ void RemoteControl::sendMotorMenu(boolean update){
   sendSlider("a02", F("Power max"), robot->motorPowerMax, "", 0.1, 100);  
   sendSlider("a03", F("calibrate left motor "), robot->motorLeftSenseCurrent, "", 1, 1000, 0);       
   sendSlider("a04", F("calibrate right motor"), robot->motorRightSenseCurrent, "", 1, 1000, 0);      
-  Bluetooth.print(F("|a05~Speed l, r"));    
+  Bluetooth.println(F("|a05~PWM Speed l, r"));    
   Bluetooth.print(robot->motorLeftPWM);
   Bluetooth.print(", ");  
   Bluetooth.print(robot->motorRightPWM);   
-  sendSlider("a06", F("Speed max in rpm"), robot->motorSpeedMax, "", 1, 100);    
+  Bluetooth.println(F("|a16~RPM Speed l, r"));    
+  Bluetooth.print(robot->motorLeftRpm);
+  Bluetooth.print(", ");  
+  Bluetooth.print(robot->motorRightRpm);
+
+  sendSlider("a06", F("Speed max in rpm"), robot->motorSpeedMaxRPM, "", 1, 100);    
   sendSlider("a15", F("Speed max in pwm"), robot->motorSpeedMaxPwm, "", 1, 255);    
   sendSlider("a11", F("Accel"), robot->motorAccel, "", 0.01, 0.1);  
   sendSlider("a18", F("Power ignore time"), robot->motorPowerIgnoreTime, "", 1, 8000);     
-  sendSlider("a07", F("Roll time max"), robot->motorRollTimeMax, "", 1, 8000);     
-  sendSlider("a08", F("Reverse time"), robot->motorReverseTime, "", 1, 8000);     
+  sendSlider("a07", F("Roll time max"), robot->motorRollTimeMax, "", 1, 3000);     
+  sendSlider("a08", F("Reverse time"), robot->motorReverseTime, "", 1, 3000);     
   sendSlider("a09", F("Forw time max"), robot->motorForwTimeMax, "", 10, 80000);       
   sendSlider("a12", F("Bidir speed ratio 1"), robot->motorBiDirSpeedRatio1, "", 0.01, 1.0);       
   sendSlider("a13", F("Bidir speed ratio 2"), robot->motorBiDirSpeedRatio2, "", 0.01, 1.0);       
@@ -298,7 +303,7 @@ void RemoteControl::processMotorMenu(String pfodCmd){
       processSlider(pfodCmd, robot->motorRightSenseCurrent, 1);
       robot->motorSenseRightScale = robot->motorRightSenseCurrent / max(0,(float)robot->motorRightSenseADC); 
 }      
-    else if (pfodCmd.startsWith("a06")) processSlider(pfodCmd, robot->motorSpeedMax, 1);
+    else if (pfodCmd.startsWith("a06")) processSlider(pfodCmd, robot->motorSpeedMaxRPM, 1);
     else if (pfodCmd.startsWith("a15")) processSlider(pfodCmd, robot->motorSpeedMaxPwm, 1);
     else if (pfodCmd.startsWith("a07")) processSlider(pfodCmd, robot->motorRollTimeMax, 1); 
     else if (pfodCmd.startsWith("a08")) processSlider(pfodCmd, robot->motorReverseTime, 1);
@@ -314,8 +319,8 @@ void RemoteControl::processMotorMenu(String pfodCmd){
       testmode = (testmode + 1) % 3;
       switch (testmode){
         case 0: robot->setNextState(STATE_OFF,0); break;
-        case 1: robot->setNextState(STATE_MANUAL,0); robot->motorRightSpeed = 0; robot->motorLeftSpeed = robot->motorSpeedMax; break;
-        case 2: robot->setNextState(STATE_MANUAL,0); robot->motorLeftSpeed  = 0; robot->motorRightSpeed = robot->motorSpeedMax; break;      
+        case 1: robot->setNextState(STATE_MANUAL,0); robot->motorRightSpeed = 0; robot->motorLeftSpeed = robot->motorSpeedMaxRPM; break;
+        case 2: robot->setNextState(STATE_MANUAL,0); robot->motorLeftSpeed  = 0; robot->motorRightSpeed = robot->motorSpeedMaxRPM; break;      
       }
     }
   sendMotorMenu(true);
@@ -637,7 +642,7 @@ void RemoteControl::sendOdometryMenu(boolean update){
   Bluetooth.print(robot->motorLeftRpm);
   Bluetooth.print(", "); 
   Bluetooth.println(robot->motorRightRpm);
-  sendSlider("l04", F("Ticks per one full revolution"), robot->odometryTicksPerRevolution, "", 1, 2000);       
+  sendSlider("l04", F("Ticks per one full revolution"), robot->odometryTicksPerRevolution, "", 1, 500);       
   sendSlider("l01", F("Ticks per cm"), robot->odometryTicksPerCm, "", 0.1, 30);       
   sendSlider("l02", F("Wheel base cm"), robot->odometryWheelBaseCm, "", 0.1, 50);  
   Bluetooth.print(F("|l08~Use two-way encoder "));
@@ -930,30 +935,30 @@ void RemoteControl::processManualMenu(String pfodCmd){
     robot->setNextState(STATE_MANUAL, 0);          
     float sign = 1.0;
     if (robot->motorLeftSpeed < 0) sign = -1.0;      
-    if (sign*robot->motorLeftSpeed >= sign*robot->motorRightSpeed) robot->motorLeftSpeed  = sign * robot->motorSpeedMax/2;      
+    if (sign*robot->motorLeftSpeed >= sign*robot->motorRightSpeed) robot->motorLeftSpeed  = sign * robot->motorSpeedMaxRPM/2;      
         else robot->motorLeftSpeed /= 2; 
-    robot->motorRightSpeed = sign * robot->motorSpeedMax;
+    robot->motorRightSpeed = sign * robot->motorSpeedMaxRPM;
     sendManualMenu(true);
   } else if (pfodCmd == "nr"){      
     // manual: right
     robot->setNextState(STATE_MANUAL, 0);          
     float sign = 1.0;
     if (robot->motorRightSpeed < 0) sign = -1.0;
-    if (sign*robot->motorRightSpeed >= sign*robot->motorLeftSpeed) robot->motorRightSpeed  = sign* robot->motorSpeedMax/2;
+    if (sign*robot->motorRightSpeed >= sign*robot->motorLeftSpeed) robot->motorRightSpeed  = sign* robot->motorSpeedMaxRPM/2;
         else robot->motorRightSpeed /= 2;            
-    robot->motorLeftSpeed  = sign * robot->motorSpeedMax;
+    robot->motorLeftSpeed  = sign * robot->motorSpeedMaxRPM;
     sendManualMenu(true);
   } else if (pfodCmd == "nf"){
     // manual: forward
     robot->setNextState(STATE_MANUAL, 0);          
-    robot->motorLeftSpeed  = robot->motorSpeedMax;
-    robot->motorRightSpeed = robot->motorSpeedMax;
+    robot->motorLeftSpeed  = robot->motorSpeedMaxRPM;
+    robot->motorRightSpeed = robot->motorSpeedMaxRPM;
     sendManualMenu(true);
   } else if (pfodCmd == "nb"){
     // manual: reverse
     robot->setNextState(STATE_MANUAL, 0);          
-    robot->motorLeftSpeed  = -robot->motorSpeedMax;
-    robot->motorRightSpeed = -robot->motorSpeedMax;
+    robot->motorLeftSpeed  = -robot->motorSpeedMaxRPM;
+    robot->motorRightSpeed = -robot->motorSpeedMaxRPM;
     sendManualMenu(true);
   } else if (pfodCmd == "nm"){
     // manual: mower ON/OFF

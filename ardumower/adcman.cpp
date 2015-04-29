@@ -30,7 +30,7 @@
 #include "adcman.h"
 #include "drivers.h"
 
-#define ADDR 224
+#define ADDR 500
 #define MAGIC 1
 
 #ifdef __AVR__
@@ -74,8 +74,8 @@ void ADCManager::init(){
   // free running ADC mode, f = ( adclock / 21 cycles per conversion )
   // using ADCCLK=405797 will result in a adcclock=403846 (due to adc_init internal conversion)
   // f = 19230,7619047619  Hz
-  //#define ADCCLK 405797        // f = 19230,7619047619  Hz
-  #define ADCCLK 202898          // f = 9615 Hz      
+  #define ADCCLK 405797        // f = 19230,7619047619  Hz
+  //#define ADCCLK 202898          // f = 9615 Hz      
   adc_init(ADC, SystemCoreClock, ADCCLK, ADC_STARTUP_FAST); // startup=768 clocks
   adc_configure_timing(ADC, 0, ADC_SETTLING_TIME_3, 1);  // tracking=0, settling=17, transfer=1    
   ADC->ADC_MR |= ADC_MR_FREERUN_ON;   // free running  
@@ -342,9 +342,9 @@ boolean ADCManager::loadCalib(){
 }
 
 void ADCManager::saveCalib(){
-#ifdef __AVR__
+
   loadSaveCalib(false);
-#endif
+
 }
 
 
