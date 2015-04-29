@@ -218,6 +218,13 @@ void RemoteControl::sendSettingsMenu(boolean update){
 
 void RemoteControl::sendErrorMenu(boolean update){
   if (update) Bluetooth.print("{:"); else Bluetooth.print(F("{.Error counters`1000"));         
+  Bluetooth.print(F("|z00~Reset"));
+  Bluetooth.print(F("|zz~Motor left "));
+  Bluetooth.print(robot->errorCounterMax[ERR_MOTOR_LEFT]);
+  Bluetooth.print(F("|zz~Motor right "));
+  Bluetooth.print(robot->errorCounterMax[ERR_MOTOR_RIGHT]);
+  Bluetooth.print(F("|zz~Motor mow "));
+  Bluetooth.print(robot->errorCounterMax[ERR_MOTOR_MOW]);  
   Bluetooth.print(F("|zz~Mow sense "));
   Bluetooth.print(robot->errorCounterMax[ERR_MOW_SENSE]);
   Bluetooth.print(F("|zz~IMU comm "));
@@ -232,6 +239,12 @@ void RemoteControl::sendErrorMenu(boolean update){
   Bluetooth.print(robot->errorCounterMax[ERR_RTC_DATA]);
   Bluetooth.println("}");
 }  
+
+void RemoteControl::processErrorMenu(String pfodCmd){      
+  if (pfodCmd == "z00") robot->resetErrorCounters();
+  sendErrorMenu(true);
+}
+
 
 void RemoteControl::sendMotorMenu(boolean update){  
   if (update) Bluetooth.print("{:"); else Bluetooth.print(F("{.Motor`1000"));     
@@ -576,8 +589,8 @@ void RemoteControl::sendBatteryMenu(boolean update){
   sendSlider("j05", F("Calibrate batFactor "), robot->batFactor, "", 0.01, 1.0);   
   //Console.print("batFactor=");
   //Console.println(robot->batFactor);  
-  sendSlider("j02", F("Go home if below"), robot->batGoHomeIfBelow, "", 0.1, robot->batFull, (robot->batFull*0.72));  // for Sony Konion cells 4.2V * 0,72= 3.024V which is pretty safe to use 
-  sendSlider("j03", F("Switch off if below"), robot->batSwitchOffIfBelow, "", 0.1, robot->batFull, (robot->batFull*0.72));  
+  sendSlider("j02", F("Go home if below"), robot->batGoHomeIfBelow, "", 0.1, 10, 30);  // for Sony Konion cells 4.2V * 0,72= 3.024V which is pretty safe to use            geändert Uwe von    sendSlider("j02", F("Go home if below"), robot->batGoHomeIfBelow, "", 0.1, robot->batFull, (robot->batFull*0.72));
+  sendSlider("j03", F("Switch off if below"), robot->batSwitchOffIfBelow, "", 0.1, 10, 30);                                                                              //geändert Uwe von    sendSlider("j03", F("Switch off if below"), robot->batSwitchOffIfBelow, "", 0.1, robot->batFull, (robot->batFull*0.72));     
   Bluetooth.print(F("|j04~Charge "));
   Bluetooth.print(robot->chgVoltage);
   Bluetooth.print("V ");
@@ -586,8 +599,8 @@ void RemoteControl::sendBatteryMenu(boolean update){
   sendSlider("j09", F("Calibrate batChgFactor"), robot->batChgFactor, "", 0.01, 1.0);       
   sendSlider("j06", F("Charge sense zero"), robot->chgSenseZero, "", 1, 600, 400);       
   sendSlider("j08", F("Charge factor"), robot->chgFactor, "", 0.01, 80);       
-  sendSlider("j10", F("charging starts if Voltage is below"), robot->startChargingIfBelow, "", 0.1, 50);       
-  sendSlider("j11", F("Battery is fully charged if current is below"), robot->batFullCurrent, "", 0.1, 10);       
+  sendSlider("j10", F("charging starts if Voltage is below"), robot->startChargingIfBelow, "", 0.01, 10, 30);                               //geändert Uwe von    sendSlider("j10", F("charging starts if Voltage is below"), robot->startChargingIfBelow, "", 0.1, 50); 
+  sendSlider("j11", F("Battery is fully charged if current is below"), robot->batFullCurrent, "", 0.01, 0.80);                              //geändert Uwe von    sendSlider("j11", F("Battery is fully charged if current is below"), robot->batFullCurrent, "", 0.1, 10);
   Bluetooth.println("}");
 }
 
@@ -603,8 +616,8 @@ void RemoteControl::processBatteryMenu(String pfodCmd){
     else if (pfodCmd.startsWith("j06")) processSlider(pfodCmd, robot->chgSenseZero, 1);   
     else if (pfodCmd.startsWith("j08")) processSlider(pfodCmd, robot->chgFactor, 0.01);    
     else if (pfodCmd.startsWith("j09")) processSlider(pfodCmd, robot->batChgFactor, 0.01);
-    else if (pfodCmd.startsWith("j10")) processSlider(pfodCmd, robot->startChargingIfBelow, 0.1);
-    else if (pfodCmd.startsWith("j11")) processSlider(pfodCmd, robot->batFullCurrent, 0.1);
+    else if (pfodCmd.startsWith("j10")) processSlider(pfodCmd, robot->startChargingIfBelow, 0.01);                                       //geändert Uwe von    else if (pfodCmd.startsWith("j10")) processSlider(pfodCmd, robot->startChargingIfBelow, 0.1);
+    else if (pfodCmd.startsWith("j11")) processSlider(pfodCmd, robot->batFullCurrent, 0.01);                                             //geändert Uwe von    else if (pfodCmd.startsWith("j11")) processSlider(pfodCmd, robot->batFullCurrent, 0.1);
   sendBatteryMenu(true);
 }
 
@@ -1355,6 +1368,7 @@ void RemoteControl::readSerial(){
         else if (pfodCmd.startsWith("p")) processTimerDetailMenu(pfodCmd);      
         else if (pfodCmd.startsWith("x")) processFactorySettingsMenu(pfodCmd);
         else if (pfodCmd.startsWith("u")) processDropMenu(pfodCmd);            
+        else if (pfodCmd.startsWith("z")) processErrorMenu(pfodCmd);                    
         else {
           // no match
           Bluetooth.println("{}");         
